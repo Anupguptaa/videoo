@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Video Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #6a11cb;
+            --secondary: #2575fc;
+            --accent: #ff3c7e;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --success: #00c853;
+            --danger: #ff5252;
+            --warning: #ffab00;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --overlay: rgba(26, 26, 46, 0.85);
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--light);
+            min-height: 100vh;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/></svg>');
+            background-size: 20px;
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            height: calc(100vh - 30px);
+            display: flex;
+            flex-direction: column;
+            background: var(--overlay);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 2;
+            background: rgba(26, 26, 46, 0.8);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            background: linear-gradient(to right, #ff8a00, #da1b60);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+
+        .header-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .player-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .player-container {
+            background: var(--dark);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            position: relative;
+            aspect-ratio: 16/9;
+            margin-bottom: 20px;
+        }
+
+        #video-player {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #000;
+        }
+
+        .player-controls {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 12px 15px;
+            border-radius: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .control-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-container {
+            flex: 1;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 3px;
+            width: 0%;
+        }
+
+        .time-display {
+            font-size: 0.8rem;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .library-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .add-video-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .add-video-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255, 60, 126, 0.4);
+        }
+
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            overflow-y: auto;
+            padding: 5px;
+            flex: 1;
+        }
+
+        .videos-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .videos-grid::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+
+        .videos-grid::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .video-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .video-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-thumbnail i {
+            font-size: 2rem;
+            opacity: 0.7;
+            position: absolute;
+            color: white;
+        }
+
+        .video-info {
+            padding: 10px;
+        }
+
+        .video-title {
+            font-size: 0.8rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 5px;
+        }
+
+        .video-duration {
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        .video-actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .video-card:hover .video-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .rename-btn {
+            background: var(--warning);
+            color: var(--dark);
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--dark);
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(-20px);
+            transition: transform 0.3s;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: 2px solid var(--accent);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cancel-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .confirm-btn {
+            background: var(--accent);
+            color: white;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .no-videos {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            flex: 1;
+            padding: 20px;
+            opacity: 0.7;
+        }
+
+        .no-videos i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .no-videos p {
+            max-width: 300px;
+            line-height: 1.6;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .player-section {
+                padding-bottom: 10px;
+            }
+            
+            .library-section {
+                padding-top: 10px;
+            }
+            
+            .videos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .video-card {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .add-video-btn:hover {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>VideoHub Player</h1>
+            <div class="header-subtitle">Your personal video collection</div>
+        </header>
+        
+        <div class="main-content">
+            <div class="player-section">
+                <div class="player-container">
+                    <video id="video-player" controls>
+                        <source src="" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                
+                <div class="player-controls">
+                    <button class="control-btn" id="play-pause-btn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="control-btn" id="stop-btn">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                    <div class="progress-container" id="progress-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <div class="time-display" id="time-display">0:00 / 0:00</div>
+                    <button class="control-btn" id="fullscreen-btn">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="library-section">
+                <div class="section-header">
+                    <div class="section-title">Your Videos</div>
+                    <button class="add-video-btn" id="add-video-btn">
+                        <i class="fas fa-plus"></i> Add Video
+                    </button>
+                </div>
+                
+                <div class="videos-grid" id="videos-grid">
+                    <!-- Video cards will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            VideoHub Player &copy; 2023 | Your personal video collection
+        </footer>
+    </div>
+    
+    <!-- File input element (hidden) -->
+    <input type="file" id="file-input" accept="video/*" multiple class="hidden">
+    
+    <!-- Rename Modal -->
+    <div class="modal" id="rename-modal">
+        <div class="modal-content">
+            <h3 class="modal-title">Rename Video</h3>
+            <div class="form-group">
+                <label for="new-video-name">New Name</label>
+                <input type="text" id="new-video-name" placeholder="Enter new video name">
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel-btn" id="rename-cancel-btn">Cancel</button>
+                <button class="modal-btn confirm-btn" id="rename-confirm-btn">Rename</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content">
+            <h3 class="modal-title">Delete Video</h3>
+            <p style="text-align: center; margin-bottom: 20px;">Are you sure you want to delete this video? This action cannot be undone.</p>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel-btn" id="delete-cancel-btn">Cancel</button>
+                <button class="modal-btn confirm-btn" id="delete-confirm-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Video storage
+        let videos = [];
+        
+        // DOM Elements
+        const videoPlayer = document.getElementById('video-player');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const progressContainer = document.getElementById('progress-container');
+        const timeDisplay = document.getElementById('time-display');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const addVideoBtn = document.getElementById('add-video-btn');
+        const videosGrid = document.getElementById('videos-grid');
+        const renameModal = document.getElementById('rename-modal');
+        const deleteModal = document.getElementById('delete-modal');
+        const newVideoNameInput = document.getElementById('new-video-name');
+        const renameConfirmBtn = document.getElementById('rename-confirm-btn');
+        const renameCancelBtn = document.getElementById('rename-cancel-btn');
+        const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+        const deleteCancelBtn = document.getElementById('delete-cancel-btn');
+        const fileInput = document.getElementById('file-input');
+        
+        // State variables
+        let currentVideoId = null;
+        let isPlaying = false;
+        
+        // Initialize the app
+        function init() {
+            renderVideos();
+            setupEventListeners();
+        }
+        
+        // Render videos in grid
+        function renderVideos() {
+            videosGrid.innerHTML = '';
+            
+            if (videos.length === 0) {
+                videosGrid.innerHTML = `
+                    <div class="no-videos">
+                        <i class="fas fa-video-slash"></i>
+                        <p>No videos found. Click "Add Video" to import videos from your device.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            videos.forEach(video => {
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                videoCard.dataset.id = video.id;
+                
+                // Create thumbnail container
+                const thumbnailContainer = document.createElement('div');
+                thumbnailContainer.className = 'video-thumbnail';
+                
+                // Create thumbnail image
+                const thumbnailImg = document.createElement('img');
+                thumbnailImg.src = video.thumbnail;
+                thumbnailImg.alt = video.title;
+                
+                // Play icon overlay
+                const playIcon = document.createElement('i');
+                playIcon.className = 'fas fa-play-circle';
+                
+                // Action buttons
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'video-actions';
+                
+                const renameBtn = document.createElement('button');
+                renameBtn.className = 'action-btn rename-btn';
+                renameBtn.title = 'Rename';
+                renameBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'action-btn delete-btn';
+                deleteBtn.title = 'Delete';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                
+                actionsContainer.appendChild(renameBtn);
+                actionsContainer.appendChild(deleteBtn);
+                
+                thumbnailContainer.appendChild(thumbnailImg);
+                thumbnailContainer.appendChild(playIcon);
+                thumbnailContainer.appendChild(actionsContainer);
+                
+                // Video info
+                const infoContainer = document.createElement('div');
+                infoContainer.className = 'video-info';
+                
+                const titleElement = document.createElement('div');
+                titleElement.className = 'video-title';
+                titleElement.textContent = video.title;
+                
+                const durationElement = document.createElement('div');
+                durationElement.className = 'video-duration';
+                durationElement.textContent = formatDuration(video.duration);
+                
+                infoContainer.appendChild(titleElement);
+                infoContainer.appendChild(durationElement);
+                
+                // Assemble the card
+                videoCard.appendChild(thumbnailContainer);
+                videoCard.appendChild(infoContainer);
+                
+                videosGrid.appendChild(videoCard);
+            });
+        }
+        
+        // Format duration in seconds to MM:SS
+        function formatDuration(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Play/Pause button
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            
+            // Stop button
+            stopBtn.addEventListener('click', stopVideo);
+            
+            // Progress bar
+            progressContainer.addEventListener('click', setProgress);
+            
+            // Fullscreen button
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            
+            // Add video button
+            addVideoBtn.addEventListener('click', () => fileInput.click());
+            
+            // File input change
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // Video grid events (using event delegation)
+            videosGrid.addEventListener('click', handleVideoGridClick);
+            
+            // Rename modal
+            renameCancelBtn.addEventListener('click', () => toggleModal(renameModal, false));
+            renameConfirmBtn.addEventListener('click', renameVideo);
+            
+            // Delete modal
+            deleteCancelBtn.addEventListener('click', () => toggleModal(deleteModal, false));
+            deleteConfirmBtn.addEventListener('click', deleteVideo);
+            
+            // Video player events
+            videoPlayer.addEventListener('timeupdate', updateProgress);
+            videoPlayer.addEventListener('play', () => updatePlayButton(true));
+            videoPlayer.addEventListener('pause', () => updatePlayButton(false));
+            videoPlayer.addEventListener('ended', stopVideo);
+        }
+        
+        // Handle file selection
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            
+            if (files.length === 0) return;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                // Only process video files
+                if (!file.type.startsWith('video/')) continue;
+                
+                // Create a unique ID for the video
+                const id = Date.now() + i;
+                
+                // Create a thumbnail
+                createThumbnail(file, (thumbnail) => {
+                    // Create a video element to get duration
+                    const video = document.createElement('video');
+                    video.src = URL.createObjectURL(file);
+                    
+                    video.onloadedmetadata = () => {
+                        const duration = Math.floor(video.duration);
+                        
+                        // Add to videos array
+                        videos.unshift({
+                            id,
+                            title: file.name,
+                            file: file,
+                            thumbnail: thumbnail,
+                            duration: duration
+                        });
+                        
+                        // Re-render the grid
+                        renderVideos();
+                        
+                        // Show notification
+                        showNotification(`Added ${file.name}`);
+                    };
+                });
+            }
+            
+            // Reset the file input
+            fileInput.value = '';
+        }
+        
+        // Create a thumbnail from video file
+        function createThumbnail(file, callback) {
+            const video = document.createElement('video');
+            video.src = URL.createObjectURL(file);
+            
+            video.onloadeddata = () => {
+                // Seek to a point in the video to capture a frame
+                video.currentTime = 0.5;
+                
+                video.onseeked = () => {
+                    // Create canvas to capture frame
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // Convert to data URL
+                    const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
+                    callback(thumbnail);
+                    
+                    // Clean up
+                    URL.revokeObjectURL(video.src);
+                };
+            };
+        }
+        
+        // Handle video grid clicks
+        function handleVideoGridClick(e) {
+            const videoCard = e.target.closest('.video-card');
+            if (!videoCard) return;
+            
+            const videoId = parseInt(videoCard.dataset.id);
+            const video = videos.find(v => v.id === videoId);
+            
+            if (!video) return;
+            
+            // Check if a button was clicked
+            const renameBtn = e.target.closest('.rename-btn');
+            const deleteBtn = e.target.closest('.delete-btn');
+            
+            if (renameBtn) {
+                openRenameModal(video);
+            } else if (deleteBtn) {
+                openDeleteModal(video);
+            } else {
+                playVideo(video);
+            }
+        }
+        
+        // Play video
+        function playVideo(video) {
+            currentVideoId = video.id;
+            
+            // Create object URL for the video file
+            const videoUrl = URL.createObjectURL(video.file);
+            videoPlayer.src = videoUrl;
+            videoPlayer.load();
+            videoPlayer.play();
+            
+            // Highlight the selected video
+            document.querySelectorAll('.video-card').forEach(card => {
+                card.style.border = parseInt(card.dataset.id) === video.id 
+                    ? '2px solid var(--accent)' 
+                    : 'none';
+            });
+        }
+        
+        // Toggle play/pause
+        function togglePlayPause() {
+            if (videoPlayer.paused || videoPlayer.ended) {
+                videoPlayer.play();
+            } else {
+                videoPlayer.pause();
+            }
+        }
+        
+        // Stop video
+        function stopVideo() {
+            videoPlayer.pause();
+            videoPlayer.currentTime = 0;
+            updatePlayButton(false);
+        }
+        
+        // Update progress bar
+        function updateProgress() {
+            const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+            progressBar.style.width = `${percent}%`;
+            
+            // Update time display
+            const currentMinutes = Math.floor(videoPlayer.currentTime / 60);
+            const currentSeconds = Math.floor(videoPlayer.currentTime % 60);
+            const durationMinutes = Math.floor(videoPlayer.duration / 60);
+            const durationSeconds = Math.floor(videoPlayer.duration % 60);
+            
+            timeDisplay.textContent = 
+                `${currentMinutes}:${currentSeconds < 10 ? '0' : ''}${currentSeconds} / ` +
+                `${durationMinutes}:${durationSeconds < 10 ? '0' : ''}${durationSeconds}`;
+        }
+        
+        // Set progress bar position
+        function setProgress(e) {
+            const width = this.clientWidth;
+            const clickX = e.offsetX;
+            const duration = videoPlayer.duration;
+            
+            videoPlayer.currentTime = (clickX / width) * duration;
+        }
+        
+        // Update play button icon
+        function updatePlayButton(playing) {
+            isPlaying = playing;
+            playPauseBtn.innerHTML = playing 
+                ? '<i class="fas fa-pause"></i>' 
+                : '<i class="fas fa-play"></i>';
+        }
+        
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                videoPlayer.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        
+        // Open rename modal
+        function openRenameModal(video) {
+            currentVideoId = video.id;
+            newVideoNameInput.value = video.title.replace(/\.[^/.]+$/, ""); // Remove extension
+            toggleModal(renameModal, true);
+            newVideoNameInput.focus();
+        }
+        
+        // Rename video
+        function renameVideo() {
+            const newName = newVideoNameInput.value.trim();
+            if (!newName) return;
+            
+            const videoIndex = videos.findIndex(v => v.id === currentVideoId);
+            if (videoIndex !== -1) {
+                const extension = videos[videoIndex].title.split('.').pop();
+                videos[videoIndex].title = `${newName}.${extension}`;
+                renderVideos();
+            }
+            
+            toggleModal(renameModal, false);
+        }
+        
+        // Open delete modal
+        function openDeleteModal(video) {
+            currentVideoId = video.id;
+            toggleModal(deleteModal, true);
+        }
+        
+        // Delete video
+        function deleteVideo() {
+            const videoIndex = videos.findIndex(v => v.id === currentVideoId);
+            if (videoIndex !== -1) {
+                // Remove the video
+                const deletedVideo = videos.splice(videoIndex, 1)[0];
+                
+                // Revoke object URL if it was playing
+                if (videoPlayer.src && videoPlayer.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(videoPlayer.src);
+                }
+                
+                renderVideos();
+                
+                // If the deleted video was playing, stop the player
+                if (videoPlayer.src && deletedVideo.id === currentVideoId) {
+                    stopVideo();
+                    videoPlayer.src = "";
+                }
+            }
+            
+            toggleModal(deleteModal, false);
+        }
+        
+        // Toggle modal visibility
+        function toggleModal(modal, show) {
+            if (show) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%) translateY(100px);
+                background: var(--accent);
+                color: white;
+                padding: 12px 25px;
+                border-radius: 30px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                z-index: 1000;
+                transition: transform 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(-50%) translateY(0)';
+            }, 10);
+            
+            // Animate out and remove
+            setTimeout(() => {
+                notification.style.transform = 'translateX(-50%) translateY(100px)';
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
